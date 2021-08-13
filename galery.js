@@ -1,74 +1,98 @@
-import galerys from './app.js'; 
-const openModal = document.querySelector('.lightbox');
-const closeModal =document.querySelector('.lightbox__button');
-const imageModal = document.querySelector('.lightbox__image');
-const cardsContainer = document.querySelector('.js-gallery');
-const cardsOverlay = document.querySelector('.lightbox__overlay');
-const cardsMarkup= createGalerryList(galerys);
-console.log(cardsMarkup);
-let currentEventImage;
-function createGalerryList(galerys){
-    return galerys.map(({preview, original, description})=>{
+import gallarys from './app.js';
+console.log(gallarys);
+
+const gallaryList = document.querySelector('.js-gallery');
+const modalImage = document.querySelector('.lightbox');
+const backdropImage = document.querySelector('.lightbox__overlay');
+const closeModalBtn = document.querySelector('.lightbox__button');
+const image = document.querySelector('.lightbox__image');
+
+
+let indexOfOriginalLink = 0;
+const originalLinks = gallarys.map(elem => {
+    return elem.original;
+  });
+
+function createGallary(gallarys){
+    return gallarys.map(({preview, original, description})=>{
 return `<li class="gallery__item">
+<a
+  class="gallery__link"
+  href="${original}"
+>
   <img
     class="gallery__image"
     src="${preview}"
     data-source="${original}"
     alt="${description}"
   />
-</li>`}).join('')
+</a>
+</li>`
+    }).join('');
 };
-cardsContainer.insertAdjacentHTML('beforeend', cardsMarkup);
-cardsContainer.addEventListener('click', onClickImage);
+const gallaryListImage = createGallary(gallarys);
+gallaryList.insertAdjacentHTML('beforeend', gallaryListImage);
+console.log(gallaryListImage);
+gallaryList.addEventListener('click', onClickImage);
+closeModalBtn.addEventListener('click', onCloseImage);
+
 function onClickImage(event){
-    console.log(event.target);
-if(!event.target.classList.contains('gallery__image')){
-  return;
-};
-currentEventImage = event.target.parentNode;  //обращаемся к родителю елемента на кoтором произошло событие - это li
-window.addEventListener('keydown',onBtnArrowClick);
-window.addEventListener('keydown',onEscPress);
-openModal.classList.add('is-open');
-imageModal.src=event.target.dataset.source;
-};
-closeModal.addEventListener('click', onCloseBtnImage);
-function onCloseBtnImage(){
-    window.removeEventListener('keydown',onBtnArrowClick);
-    window.removeEventListener('keydown',onEscPress);
-    openModal.classList.remove('is-open');
-    imageModal.src ='';
-  
-};
-// Закрыть модалку по клику в бекдроп
-cardsOverlay.addEventListener('click', onCloseModalClickBackdrop);
-function onCloseModalClickBackdrop(event){
-    if(event.target===event.currentTarget){
-        onCloseBtnImage()
-    }
-};
-// Закрыть мoдалку по клику на esc
-// сначала повесим слушатель события нажатия на клавиатуру на window(  window.removeEventListener('keydown',onEscPress);
-function onEscPress(event){
-    if(event.code==='Escape'){
-        onCloseBtnImage()
-    }
-};
-// Пролистывание изображений галереи в открытом модальном окне клавишами "влево" и "вправо"
-function onBtnArrowClick(event){
-if(event.code==='ArrowRight'){
-    let pressBtnLeft = currentEventImage.nextElementSibling;
-    if(!pressBtnLeft){
-        pressBtnLeft=cardsContainer.firstElementChild;
+    event.preventDefault()
+    if(!event.target.classList.contains('gallery__image')){
+        return;
     };
-    imageModal.src = pressBtnLeft.firstElementChild.dataset.source;
-    currentEventImage=pressBtnLeft;
+modalImage.classList.add('is-open');
+
+window.addEventListener('keydown', onCloseClickEsc);
+window.addEventListener('keydown',arrowNavigation);
+image.src=event.target.dataset.source;
+indexOfOriginalLink = originalLinks.indexOf(event.target.dataset.source);
 };
-if(event.code==='ArrowLeft'){
-    let pressBrtnRigth = currentEventImage.previousElementSibling;
-    if(!pressBrtnRigth){
-        pressBrtnRigth = cardsContainer.lastElementChild;
-    };
-    imageModal.src = pressBrtnRigth.lastElementChild.dataset.source;
-    currentEventImage=pressBrtnRigth;
+
+function onCloseImage(){
+    window.removeEventListener('keydown', onCloseClickEsc);
+    window.removeEventListener('keydown',arrowNavigation);
+    modalImage.classList.remove('is-open');
+image.src='';
+};
+
+backdropImage.addEventListener('click', onCloseBackdropClickImage);
+function onCloseBackdropClickImage(event){
+if(event.target===event.currentTarget){
+    onCloseImage()
 }
-    };
+};
+
+function onCloseClickEsc(event){
+    if(event.code==='Escape'){
+        onCloseImage()
+    }
+};
+
+
+const moveToLeft = evt => {
+    if (evt.code === 'ArrowLeft') {
+      indexOfOriginalLink > 0
+        ? (image.src = originalLinks[(indexOfOriginalLink -= 1)])
+        : (image.src =
+            originalLinks[(indexOfOriginalLink = originalLinks.length - 1)]);
+    }
+  };
+  
+  const moveToRight = evt => {
+    if (evt.code === 'ArrowRight') {
+      indexOfOriginalLink < originalLinks.length - 1
+        ? (image.src = originalLinks[(indexOfOriginalLink += 1)])
+        : (image.src = originalLinks[(indexOfOriginalLink = 0)]);
+    }
+  };
+  
+  const arrowNavigation = evt => {
+    if (!modalImage.classList.contains('is-open')) {
+      return;
+    }
+    moveToLeft(evt);
+    moveToRight(evt);
+  };
+  
+
